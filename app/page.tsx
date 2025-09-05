@@ -1,7 +1,7 @@
 "use client";
 
 import {useState} from "react";
-import {fetchMovieRec} from "@/lib/clients";
+import {fetchMovieRec} from "@/lib/client";
 import {Movie} from "@/types/shared";
 import {isMovieArray} from "@/lib/typeguards";
 
@@ -19,6 +19,7 @@ export default function Home() {
     try {
       const response = await fetchMovieRec(prompt);
 
+      // Om response inte är ett objekt
       if (!response || typeof response !== "object") {
         throw new Error("Invalid response format from API");
       }
