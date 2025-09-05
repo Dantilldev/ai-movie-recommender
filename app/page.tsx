@@ -1,69 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import {useState} from "react";
+import {fetchMovieRec} from "@/lib/clients";
+import {Movie} from "@/types/shared";
+import {isMovieArray} from "@/lib/typeguards";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
-  const [movies, setMovies] = useState([]); // store parsed movies
-  const [finalPick, setFinalPick] = useState(null);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [finalPick, setFinalPick] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleGenerate = async () => {
     setLoading(true);
     setMovies([]);
     setFinalPick(null);
-  
+
     try {
-      const request = `Recommend movies based on: ${prompt}.
-      Return ONLY valid JSON in this format:
-      {
-        "recommendations": [
-          {"title": "Movie title", "year": 2000, "genre": "Comedy"},
-          {"title": "Another title", "year": 2010, "genre": "Drama"}
-        ],
-        "final_recommendation": {"title": "Best Pick", "year": 1995, "genre": "Romance"}
-      }`;
-  
-      const res = await fetch("/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: request }),
-      });
-  
-      const data = await res.json();
-  
-      if (!data.output) {
-        console.error("No output from AI:", data);
-        return;
+      const response = await fetchMovieRec(prompt);
+
+      if (!response || typeof response !== "object") {
+        throw new Error("Invalid response format from API");
       }
-  
-      let responseText = data.output;
-  
-      // Clean unwanted fences safely
-      const cleaned = responseText
-        .toString()
-        .trim()
-        .replace(/^```json/, "")
-        .replace(/^```/, "")
-        .replace(/```$/, "");
-  
-      const parsed = JSON.parse(cleaned);
-  
-      if (parsed.recommendations && Array.isArray(parsed.recommendations)) {
-        setMovies(parsed.recommendations);
-      }
-      if (parsed.final_recommendation) {
-        setFinalPick(parsed.final_recommendation);
+
+      const parsedOutput = response.parsedOutPut;
+      const recommendations = parsedOutput?.recommendations;
+      const finalRecommendation = parsedOutput?.final_recommendation;
+
+      if (isMovieArray(recommendations)) {
+        setMovies(recommendations);
+        setFinalPick(finalRecommendation ?? null);
+        setPrompt("");
+      } else if (
+        Array.isArray(recommendations) &&
+        recommendations.length === 0
+      ) {
+        alert("No movies found for your prompt.");
+        setMovies([]);
+      } else {
+        alert("AI did not return valid recommendations.");
+        setMovies([]);
       }
     } catch (err) {
-      console.error("Error parsing movie recommendations:", err);
-      setMovies([]);
-      setFinalPick(null);
+      console.error(err);
+      setPrompt("");
+      alert("Error occurred while generating.");
+    } finally {
+      setLoading(false);
     }
-  
-    setLoading(false);
   };
-  
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6">
       <h1 className="text-2xl font-bold mb-4">🎬 Movie Recommender</h1>
