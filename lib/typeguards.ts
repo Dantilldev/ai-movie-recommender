@@ -1,15 +1,12 @@
-import {Movie} from "@/types/shared";
+import {MovieSchema, MovieArraySchema} from "@/types/shared";
+import type {Movie} from "@/types/shared";
 
-export function isMovie(obj: any): obj is Movie {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    typeof obj.title === "string" &&
-    typeof obj.year === "number" &&
-    typeof obj.genre === "string"
-  );
+// Type guard för att kontrollera om en variabel är ett Movie-objekt
+export function isMovie(obj: unknown): obj is Movie {
+  return MovieSchema.safeParse(obj).success;
 }
 
-export function isMovieArray(arr: any): arr is Movie[] {
-  return Array.isArray(arr) && arr.every(isMovie);
+// Type guard för att kontrollera om en variabel är en array av Movie-objekt
+export function isMovieArray(arr: unknown): arr is Movie[] {
+  return MovieArraySchema.safeParse(arr).success;
 }

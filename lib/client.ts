@@ -1,7 +1,7 @@
-import type {PromptRequest} from "@/types/shared";
+import type {PromptRequest} from "@/types/shared"; // Använder PromptRequest för att säkerställa rätt format som har {prompt: string}.
 
 export async function fetchMovieRec(prompt: string) {
-  const req: PromptRequest = {prompt}; // typkontroll
+  const req: PromptRequest = {prompt};
 
   const res = await fetch("/generate", {
     method: "POST",

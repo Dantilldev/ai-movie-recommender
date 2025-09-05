@@ -1,9 +1,8 @@
 "use client";
-
 import {useState} from "react";
 import {fetchMovieRec} from "@/lib/client";
 import {Movie} from "@/types/shared";
-import {isMovieArray} from "@/lib/typeguards";
+import {AIResponseSchema} from "@/types/shared";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
@@ -17,35 +16,29 @@ export default function Home() {
     setFinalPick(null);
 
     try {
+      // Hämta data från API
       const response = await fetchMovieRec(prompt);
 
-      // Om response inte är ett objekt
-      if (!response || typeof response !== "object") {
-        throw new Error("Invalid response format from API");
+      // Grundläggande kontroll av svaret
+      if (!response || !response.parsedOutPut) {
+        alert("Fick inget svar från API:et");
+        return;
       }
 
-      const parsedOutput = response.parsedOutPut;
-      const recommendations = parsedOutput?.recommendations;
-      const finalRecommendation = parsedOutput?.final_recommendation;
-
-      if (isMovieArray(recommendations)) {
-        setMovies(recommendations);
-        setFinalPick(finalRecommendation ?? null);
-        setPrompt("");
-      } else if (
-        Array.isArray(recommendations) &&
-        recommendations.length === 0
-      ) {
-        alert("No movies found for your prompt.");
-        setMovies([]);
-      } else {
-        alert("AI did not return valid recommendations.");
-        setMovies([]);
+      // Kontrollera om vi har några rekommendationer
+      if (response.parsedOutPut.recommendations?.length === 0) {
+        alert("Hittade inga filmer för din sökning, försök igen senare.");
+        return;
       }
-    } catch (err) {
-      console.error(err);
+
+      // Validera med Zod och använd data direkt
+      const validData = AIResponseSchema.parse(response.parsedOutPut);
+      setMovies(validData.recommendations);
+      setFinalPick(validData.final_recommendation);
       setPrompt("");
-      alert("Error occurred while generating.");
+    } catch (err) {
+      console.error("Error:", err);
+      alert("Funkar inte, försök igen senare.");
     } finally {
       setLoading(false);
     }
