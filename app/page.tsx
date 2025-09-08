@@ -1,69 +1,49 @@
 "use client";
-
-import { useState } from "react";
+import {useState} from "react";
+import {fetchMovieRec} from "@/lib/client";
+import {Movie} from "@/types/shared";
+import {AIResponseSchema} from "@/types/shared";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
-  const [movies, setMovies] = useState([]); // store parsed movies
-  const [finalPick, setFinalPick] = useState(null);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [finalPick, setFinalPick] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleGenerate = async () => {
     setLoading(true);
     setMovies([]);
     setFinalPick(null);
-  
+
     try {
-      const request = `Recommend movies based on: ${prompt}.
-      Return ONLY valid JSON in this format:
-      {
-        "recommendations": [
-          {"title": "Movie title", "year": 2000, "genre": "Comedy"},
-          {"title": "Another title", "year": 2010, "genre": "Drama"}
-        ],
-        "final_recommendation": {"title": "Best Pick", "year": 1995, "genre": "Romance"}
-      }`;
-  
-      const res = await fetch("/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: request }),
-      });
-  
-      const data = await res.json();
-  
-      if (!data.output) {
-        console.error("No output from AI:", data);
+      // Hämta data från API
+      const response = await fetchMovieRec(prompt);
+
+      // Grundläggande kontroll av svaret
+      if (!response || !response.parsedOutPut) {
+        alert("Fick inget svar från API:et");
         return;
       }
-  
-      let responseText = data.output;
-  
-      // Clean unwanted fences safely
-      const cleaned = responseText
-        .toString()
-        .trim()
-        .replace(/^```json/, "")
-        .replace(/^```/, "")
-        .replace(/```$/, "");
-  
-      const parsed = JSON.parse(cleaned);
-  
-      if (parsed.recommendations && Array.isArray(parsed.recommendations)) {
-        setMovies(parsed.recommendations);
+
+      // Kontrollera om vi har några rekommendationer
+      if (response.parsedOutPut.recommendations?.length === 0) {
+        alert("Hittade inga filmer för din sökning, försök igen senare.");
+        return;
       }
-      if (parsed.final_recommendation) {
-        setFinalPick(parsed.final_recommendation);
-      }
+
+      // Validera med Zod och använd data direkt
+      const validData = AIResponseSchema.parse(response.parsedOutPut);
+      setMovies(validData.recommendations);
+      setFinalPick(validData.final_recommendation);
+      setPrompt("");
     } catch (err) {
-      console.error("Error parsing movie recommendations:", err);
-      setMovies([]);
-      setFinalPick(null);
+      console.error("Error:", err);
+      alert("Funkar inte, försök igen senare.");
+    } finally {
+      setLoading(false);
     }
-  
-    setLoading(false);
   };
-  
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6">
       <h1 className="text-2xl font-bold mb-4">🎬 Movie Recommender</h1>
