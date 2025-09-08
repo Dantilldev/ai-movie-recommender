@@ -11,24 +11,24 @@ export type Movie = {
 export type PromptRequest = {prompt: string};
 
 // Enkelt schema för Movie
-export const MovieSchema = z.object({
+export const MovieObjectSchema = z.object({
   title: z.string(),
   year: z.number(),
   genre: z.string(),
 });
+
+// Schema för array av filmer
+export const MovieArraySchema = z.array(MovieObjectSchema);
 
 // Enkelt schema för PromptRequest
 export const PromptRequestSchema = z.object({
   prompt: z.string(),
 });
 
-// Schema för array av filmer
-export const MovieArraySchema = z.array(MovieSchema);
-
 // Schema för AI-svar
 export const AIResponseSchema = z.object({
   recommendations: MovieArraySchema,
-  final_recommendation: MovieSchema,
+  final_recommendation: MovieObjectSchema,
 });
 
 // Literal union för UI-states

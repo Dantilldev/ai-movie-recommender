@@ -64,7 +64,7 @@ export default function Home() {
         {loading ? "Generating..." : "Get Recommendations"}
       </button>
 
-      {/* Recommendations */}
+      {/* Recommendations 
       {movies.length > 0 && (
         <div className="mt-6 w-96">
           <h2 className="font-semibold mb-3">🎥 Recommendations:</h2>
