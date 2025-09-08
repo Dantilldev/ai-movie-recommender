@@ -19,19 +19,19 @@ export default function Home() {
       // Hämta data från API
       const response = await fetchMovieRec(prompt);
 
-      // Grundläggande kontroll av svaret
+      // kontroll av svaret
       if (!response || !response.parsedOutPut) {
         alert("Fick inget svar från API:et");
         return;
       }
 
-      // Kontrollera om vi har några rekommendationer
+      // Kontrollera rekommendationer
       if (response.parsedOutPut.recommendations?.length === 0) {
         alert("Hittade inga filmer för din sökning, försök igen senare.");
         return;
       }
 
-      // Validera med Zod och använd data direkt
+      // Validering med Zod och använd data direkt
       const validData = AIResponseSchema.parse(response.parsedOutPut);
       setMovies(validData.recommendations);
       setFinalPick(validData.final_recommendation);
@@ -64,7 +64,7 @@ export default function Home() {
         {loading ? "Generating..." : "Get Recommendations"}
       </button>
 
-      {/* Recommendations 
+      {/* Recommendations */}
       {movies.length > 0 && (
         <div className="mt-6 w-96">
           <h2 className="font-semibold mb-3">🎥 Recommendations:</h2>

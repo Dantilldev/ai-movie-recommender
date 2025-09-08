@@ -37,7 +37,6 @@ If the prompt is empty, return random movies and a final recommendation.
 Always include one clear final movie in "final_recommendation".`,
 });
 
-// Add this POST handler for the API route
 export async function POST(request: Request) {
   try {
     // Hämta och validera indata
@@ -54,7 +53,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Hämta prompt och anropa AI-modellen
+    // Hämta prompt och anropa AI
     const prompt = body.prompt;
     const result = await model.generateContent(prompt);
     const output = result.response.text();
@@ -71,7 +70,6 @@ export async function POST(request: Request) {
         // Validera hela svaret med AIResponseSchema
         const validData = AIResponseSchema.parse(parsed);
 
-        // Om validering lyckas, returnera svaret
         return new Response(
           JSON.stringify({
             response: true,
@@ -82,7 +80,7 @@ export async function POST(request: Request) {
       } catch (validationError) {
         console.error("Validation error:", validationError);
 
-        // Detaljerat fel vid validering
+        //  fel vid validering
         return new Response(
           JSON.stringify({
             response: false,
