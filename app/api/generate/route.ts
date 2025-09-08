@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   try {
     // Hämtar data från requesten
     const body = await request.json();
-    const prompt = body.prompt || "";
+    const prompt = body.prompt || ""; // Hanterar promten eller om den är tom för att får random filmer enligt instruktionen
 
     // Anropa AI:n
     const result = await model.generateContent(prompt);
@@ -54,11 +54,12 @@ export async function POST(request: Request) {
       parsedOutPut: validData,
     });
   } catch (error) {
-    // En enda felhantering för alla typer av fel
+    // Felhantering
+    console.error("Error in /api/generate: ", error);
     return Response.json(
       {
         response: false,
-        error: "Kunde inte hämta filmrekommendationer",
+        error: "Kunde inte hämta filmer",
       },
       {status: 500}
     );
