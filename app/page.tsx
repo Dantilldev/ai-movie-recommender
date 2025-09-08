@@ -2,7 +2,6 @@
 import {useState} from "react";
 import {fetchMovieRec} from "@/lib/client";
 import {Movie} from "@/types/shared";
-import {AIResponseSchema} from "@/types/shared";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
@@ -11,34 +10,33 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
 
   const handleGenerate = async () => {
+    // Starta laddning och rensa tidigare resultat
     setLoading(true);
     setMovies([]);
     setFinalPick(null);
 
     try {
-      // Hämta data från API
+      // Hämta filmrekommendationer
       const response = await fetchMovieRec(prompt);
 
-      // kontroll av svaret
-      if (!response || !response.parsedOutPut) {
-        alert("Fick inget svar från API:et");
+      // Kontrollerar om API:et returnerar
+      if (!response.response) {
+        alert(response.error || "Något gick fel med API:et");
         return;
       }
 
-      // Kontrollera rekommendationer
-      if (response.parsedOutPut.recommendations?.length === 0) {
-        alert("Hittade inga filmer för din sökning, försök igen senare.");
+      // Kontrollerar om vi fick något svar
+      if (!response.parsedOutPut) {
+        alert("Ingen data mottogs");
         return;
       }
 
-      // Validering med Zod och använd data direkt
-      const validData = AIResponseSchema.parse(response.parsedOutPut);
-      setMovies(validData.recommendations);
-      setFinalPick(validData.final_recommendation);
+      // Använd data från API:et
+      setMovies(response.parsedOutPut.recommendations); // filmer för listan
+      setFinalPick(response.parsedOutPut.final_recommendation); // film för finalpick
       setPrompt("");
     } catch (err) {
-      console.error("Error:", err);
-      alert("Funkar inte, försök igen senare.");
+      alert("Något gick fel. Försök igen.");
     } finally {
       setLoading(false);
     }

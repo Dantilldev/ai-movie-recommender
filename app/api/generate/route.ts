@@ -23,88 +23,44 @@ When the user gives a prompt, reply only with valid JSON in this format:
 }
 
 Give exactly the number of recommendations the user asks for.
-
-If the prompt is about a theme, topic, genre (like sports), or a feeling (like sad or happy), choose movies that match that idea.
-
+If the prompt is about a theme, topic, genre, or feeling, choose movies that match.
 If the prompt has nothing to do with movies, do not give any recommendations.
-
-Use short and simple movie titles and genres.
-
-Do not add any extra text outside the JSON.
-
-If the prompt is empty, return random movies and a final recommendation.
-
-Always include one clear final movie in "final_recommendation".`,
+Use short movie titles and genres.
+Do not add text outside the JSON.
+If the prompt is empty, return random movies.
+Always include one final movie in "final_recommendation".`,
 });
 
 export async function POST(request: Request) {
   try {
-    // Hämta och validera indata
+    // Hämtar data från requesten
     const body = await request.json();
+    const prompt = body.prompt || "";
 
-    // Enkel validering av prompt
-    if (!body.prompt && typeof body.prompt !== "string") {
-      return new Response(
-        JSON.stringify({
-          response: false,
-          error: "En giltig söksträng krävs",
-        }),
-        {status: 400, headers: {"Content-Type": "application/json"}}
-      );
-    }
-
-    // Hämta prompt och anropa AI
-    const prompt = body.prompt;
+    // Anropa AI:n
     const result = await model.generateContent(prompt);
-    const output = result.response.text();
+    const cleaned = result.response
+      .text()
+      .replace(/```[a-z]*|```/g, "")
+      .trim();
 
-    // Rensa output
-    const cleaned = output.replace(/```[a-z]*|```/g, "").trim();
+    // Parsa och validera svaret
+    const parsed = JSON.parse(cleaned);
+    const validData = AIResponseSchema.parse(parsed);
 
-    try {
-      // Parsa JSON-svaret
-      const parsed = JSON.parse(cleaned);
-
-      // Validera AI-svaret med Zod schema
-      try {
-        // Validera hela svaret med AIResponseSchema
-        const validData = AIResponseSchema.parse(parsed);
-
-        return new Response(
-          JSON.stringify({
-            response: true,
-            parsedOutPut: validData,
-          }),
-          {status: 200, headers: {"Content-Type": "application/json"}}
-        );
-      } catch (validationError) {
-        console.error("Validation error:", validationError);
-
-        //  fel vid validering
-        return new Response(
-          JSON.stringify({
-            response: false,
-            error: "AI:n returnerade inte rätt format",
-            details: (validationError as Error).message,
-            parsed: parsed,
-          }),
-          {status: 500, headers: {"Content-Type": "application/json"}}
-        );
-      }
-    } catch (err) {
-      return new Response(
-        JSON.stringify({
-          response: false,
-          error: "Kunde inte parsa svaret från AI:n",
-          cleaned: cleaned,
-        }),
-        {status: 500, headers: {"Content-Type": "application/json"}}
-      );
-    }
-  } catch (error) {
-    return new Response(JSON.stringify({response: false, error: "Serverfel"}), {
-      status: 500,
-      headers: {"Content-Type": "application/json"},
+    // Returnera framgångsrikt svar
+    return Response.json({
+      response: true,
+      parsedOutPut: validData,
     });
+  } catch (error) {
+    // En enda felhantering för alla typer av fel
+    return Response.json(
+      {
+        response: false,
+        error: "Kunde inte hämta filmrekommendationer",
+      },
+      {status: 500}
+    );
   }
 }
