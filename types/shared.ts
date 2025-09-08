@@ -10,7 +10,7 @@ export type Movie = {
 // Typ för prompt request
 export type PromptRequest = {prompt: string};
 
-// Enkelt schema för Movie
+// Schema för Movie
 export const MovieObjectSchema = z.object({
   title: z.string(),
   year: z.number(),
@@ -20,7 +20,7 @@ export const MovieObjectSchema = z.object({
 // Schema för array av filmer
 export const MovieArraySchema = z.array(MovieObjectSchema);
 
-// Enkelt schema för PromptRequest
+// Schema för PromptRequest
 export const PromptRequestSchema = z.object({
   prompt: z.string(),
 });
@@ -31,10 +31,12 @@ export const AIResponseSchema = z.object({
   final_recommendation: MovieObjectSchema,
 });
 
-// Literal union för UI-states
-// export type UIState = "idle" | "loading" | "error" | "success";
+// Infererad typ från AIResponseSchema
+export type AIResponse = z.infer<typeof AIResponseSchema>;
 
-// använder z.infer för att undvika duplicering av typdefinitioner
-// export type MovieZod = z.infer<typeof MovieSchema>;
-// export type MovieArrayZod = z.infer<typeof MovieArraySchema>;
-// export type AIResponseZod = z.infer<typeof AIResponseSchema>;
+// API-svarets typ (som kommer från /api/generate)
+export type MovieResponse = {
+  response: boolean;
+  parsedOutPut?: AIResponse;
+  error?: string;
+};
