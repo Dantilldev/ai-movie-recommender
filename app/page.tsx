@@ -1,16 +1,17 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { fetchMovieRec } from "@/lib/client";
 import { Movie } from "@/types/shared";
 import FavoriteButton from "@/components/FavoriteButton";
 import MovieDetails from "@/components/MovieDetails";
-import MovieList from "@/components/MovieList";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [movies, setMovies] = useState<Movie[]>([]);
   const [finalPick, setFinalPick] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -41,9 +42,15 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gray-50 p-6">
-      <div className="w-full max-w-2xl">
-        <h1 className="text-3xl font-bold mb-6 text-center">
+    <div className="flex flex-col items-center min-h-screen p-6 relative overflow-hidden bg-gradient-to-br from-gray-900 via-black to-gray-800">
+      
+      <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-yellow-400 via-transparent to-transparent opacity-30 pointer-events-none" />
+      
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <div className="w-full h-full bg-gradient-to-br from-black via-gray-900 to-black opacity-80" />
+      </div>
+      <div className="w-full max-w-2xl relative z-10">
+        <h1 className="text-3xl font-bold mb-6 text-center text-white">
           🎬 Movie Recommender
         </h1>
 
@@ -54,21 +61,31 @@ export default function Home() {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="Enter your preferences..."
-            className="border rounded-lg px-4 py-2 w-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border rounded-lg px-4 py-2 w-full shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-gray-900 text-yellow-200 placeholder-yellow-400"
           />
           <button
             onClick={handleGenerate}
             disabled={loading}
-            className="bg-blue-600 text-white px-5 py-2 rounded-lg shadow-sm hover:bg-blue-700 disabled:opacity-50"
+            className="bg-yellow-400 text-gray-900 px-5 py-2 rounded-lg shadow-sm hover:bg-yellow-500 disabled:opacity-50 font-bold"
           >
             {loading ? "Generating..." : "Get"}
+          </button>
+        </div>
+
+        {/* Favorites Button */}
+        <div className="flex justify-end mb-8">
+          <button
+            onClick={() => router.push("/favorites")}
+            className="bg-yellow-400 text-gray-900 px-4 py-2 rounded-lg shadow hover:bg-yellow-500 transition font-bold"
+          >
+            Visa favoriter
           </button>
         </div>
 
         {/* Recommendations */}
         {movies.length > 0 && (
           <div className="mb-8">
-            <h2 className="font-semibold text-xl mb-4">🎥 Recommendations</h2>
+            <h2 className="font-semibold text-xl mb-4 text-white text-center">🎥 Recommendations</h2>
             <ul className="space-y-4">
               {movies.map((movie, idx) => (
                 <li
@@ -97,7 +114,7 @@ export default function Home() {
         {/* Final Pick */}
         {finalPick && (
           <div className="mb-10 border-t pt-6">
-            <h3 className="font-semibold text-lg mb-2">⭐ Final Pick</h3>
+            <h3 className="font-semibold text-lg mb-2 text-white text-center">⭐ Final Pick</h3>
             <div className="border rounded-xl p-4 shadow bg-white">
               <p className="font-bold text-lg">
                 {finalPick.title}{" "}
@@ -113,10 +130,9 @@ export default function Home() {
             </div>
           </div>
         )}
-
-        {/* Favorites */}
-        <MovieList />
       </div>
+      
+      <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-yellow-900 via-transparent to-transparent opacity-20 pointer-events-none" />
     </div>
   );
 }
