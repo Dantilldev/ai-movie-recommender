@@ -1,5 +1,6 @@
 import {GoogleGenerativeAI} from "@google/generative-ai";
-import {AIResponseSchema} from "@/types/shared";
+import {AIResponseSchema} from "@/validation/schemas";
+import {PromptRequestSchema} from "@/validation/schemas";
 
 const apiKey = process.env.GOOGLE_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey!);
@@ -35,7 +36,8 @@ export async function POST(request: Request) {
   try {
     // Hämtar data från requesten
     const body = await request.json();
-    const prompt = body.prompt || ""; // Hanterar promten eller om den är tom för att får random filmer enligt instruktionen
+    const validBody = PromptRequestSchema.parse(body); // Validerar body med Zod-schema
+    const prompt = validBody.prompt || ""; // Hanterar promten eller om den är tom för att får random filmer enligt instruktionen
 
     // Anropa AI:n
     const result = await model.generateContent(prompt);
