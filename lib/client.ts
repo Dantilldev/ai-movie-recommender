@@ -10,5 +10,5 @@ export async function fetchMovieRec(prompt: string): Promise<MovieResponse> {
     body: JSON.stringify(req),
   });
 
-  return (await res.json()) as MovieResponse; // Returnerar svaret som MovieResponse, som består av response, parsedOutPut och error
+  return (await res.json()) as MovieResponse; // Returnerar svaret som MovieResponse
 }
