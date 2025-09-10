@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { AIResponseSchema } from "@/types/shared";
+import { AIResponseSchema } from "@/validation/schemas";
 
 describe("AIResponseSchema", () => {
     it("accepts valid movie response", () => {
