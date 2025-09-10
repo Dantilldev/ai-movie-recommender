@@ -1,4 +1,4 @@
-// Grundläggande filmtyp - definierar strukturen för en film
+// Grundläggande filmtyp
 export interface Movie {
   title: string;
   year: number;
@@ -22,3 +22,19 @@ export interface MovieResponse {
   parsedOutPut?: AIResponse;
   error?: string;
 }
+
+// Omdbs filmuppgifter
+export interface OmdbMovieDetails {
+  Poster?: string;
+  Plot?: string;
+  Director?: string;
+  Actors?: string;
+  imdbRating?: string;
+}
+
+// UI state typ
+export type UiState =
+  | {status: "idle"}
+  | {status: "loading"}
+  | {status: "error"; message: string}
+  | {status: "success"; movies: Movie[]; finalPick: Movie | null};
