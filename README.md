@@ -363,35 +363,54 @@ export type UiState =
 
 ### B. API-rutt (45 sek)
 
-Visa `/app/api/movieRec/route.ts` (om möjligt):
+Visa `/app/api/generate/route.ts` (om möjligt):
 
 - **POST-rutt** som tar `PromptRequest`
-- **Validering** av input
+- **Validering** av input med Zod
 - **Anrop** till Gemini API
+- **Validering** av AI-svar med Zod
 - **Returnerar** typad `MovieResponse`
 
-```typescript
-// Exempel på API-rutt (förenklad)
-import {NextResponse} from "next/server";
-import {promptSchema} from "../../../validation/schemas";
+````typescript
+// Exempel på faktisk API-rutt (förenklad)
+import {GoogleGenerativeAI} from "@google/generative-ai";
+import {AIResponseSchema, PromptRequestSchema} from "@/validation/schemas";
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const parsed = promptSchema.safeParse(body);
+  try {
+    // Validera inkommande data
+    const body = await request.json();
+    const validBody = PromptRequestSchema.parse(body);
+    const prompt = validBody.prompt || "";
 
-  if (!parsed.success) {
-    return NextResponse.json({response: false, error: "Invalid prompt"});
+    // Anropa AI:n
+    const result = await model.generateContent(prompt);
+    const cleaned = result.response
+      .text()
+      .replace(/```[a-z]*|```/g, "")
+      .trim();
+
+    // Parsa och validera svaret
+    const parsed = JSON.parse(cleaned);
+    const validData = AIResponseSchema.parse(parsed);
+
+    // Returnera framgångsrikt svar
+    return Response.json({
+      response: true,
+      parsedOutPut: validData,
+    });
+  } catch (error) {
+    // Felhantering
+    return Response.json(
+      {
+        response: false,
+        error: "Kunde inte hämta filmer",
+      },
+      {status: 500}
+    );
   }
-
-  // Anrop till Google Gemini API...
-  const aiResponse = await callGeminiAPI(parsed.data.prompt);
-
-  return NextResponse.json({
-    response: true,
-    parsedOutPut: aiResponse,
-  });
 }
-```
+````
 
 ### C. Frontend med States (45 sek)
 

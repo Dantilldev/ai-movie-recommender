@@ -1,6 +1,5 @@
 import {GoogleGenerativeAI} from "@google/generative-ai";
-import {AIResponseSchema} from "@/validation/schemas";
-import {PromptRequestSchema} from "@/validation/schemas";
+import {AIResponseSchema, PromptRequestSchema} from "@/validation/schemas";
 
 const apiKey = process.env.GOOGLE_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey!);
