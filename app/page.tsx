@@ -25,12 +25,12 @@ export default function Home() {
       const response = await fetchMovieRec(prompt);
 
       if (!response.response) {
-        setError(response.error || "❌ Något gick fel med API:et");
+        setError(response.error || "❌ Something went wrong with the API.");
         return;
       }
 
       if (!response.parsedOutPut) {
-        setError("❌ Ingen data mottogs");
+        setError("❌ No data was received.");
         return;
       }
 
@@ -38,7 +38,7 @@ export default function Home() {
       setFinalPick(response.parsedOutPut.final_recommendation);
       setPrompt("");
     } catch (err) {
-      setError("❌ Något gick fel. Försök igen.");
+      setError("❌ Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -86,7 +86,7 @@ export default function Home() {
             onClick={() => router.push("/favorites")}
             className="bg-yellow-400 text-gray-900 px-4 py-2 rounded-lg shadow hover:bg-yellow-500 transition font-bold"
           >
-            Visa favoriter
+            Show favorites ✅
           </button>
         </div>
 
@@ -98,7 +98,7 @@ export default function Home() {
               className="ml-4 text-sm text-red-800 underline"
             > 
             {/* User Flow */}
-              Försök igen 
+              Try agin 
             </button>
           </div>
         )}
