@@ -1,13 +1,14 @@
 "use client";
-import { useState, useEffect } from "react";
-import { Movie } from "@/types/shared";
+import {useState, useEffect} from "react";
+import {Movie} from "@/types/shared";
+import {OmdbMovieDetails} from "@/types/shared";
 
 interface MovieDetailsProps {
   movie: Movie;
 }
 
-export default function MovieDetails({ movie }: MovieDetailsProps) {
-  const [details, setDetails] = useState<any>(null);
+export default function MovieDetails({movie}: MovieDetailsProps) {
+  const [details, setDetails] = useState<OmdbMovieDetails | null>(null);
   const [loading, setLoading] = useState(false);
 
   const fetchDetails = async () => {

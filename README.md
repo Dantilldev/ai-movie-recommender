@@ -65,6 +65,22 @@ interface MovieResponse {
   parsedOutPut?: AIResponse;
   error?: string;
 }
+
+// OMDB API-svar för filmdetaljer
+interface OmdbMovieDetails {
+  Poster?: string;
+  Plot?: string;
+  Director?: string;
+  Actors?: string;
+  imdbRating?: string;
+}
+
+// UI-state hantering med diskriminerad union
+type UiState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'error', message: string }
+  | { status: 'success', movies: Movie[], finalPick: Movie | null };
 ```
 
 ## ⚙️ Installation
@@ -147,11 +163,22 @@ Skicka en prompt och få filmrekommendationer.
 
 ## UI-states och användarupplevelse
 
-Applikationen hanterar följande tillstånd för optimal användarupplevelse:
+Applikationen använder en diskriminerad union-typ för att hantera följande UI-tillstånd:
+
+```typescript
+// UI-state för applikationen
+export type UiState =
+  | {status: "idle"}
+  | {status: "loading"}
+  | {status: "error"; message: string}
+  | {status: "success"; movies: Movie[]; finalPick: Movie | null};
+```
+
+Detta gör att vi kan hantera alla tillstånd på ett typesäkert sätt:
 
 - **idle** - Starttillstånd med fokuserat textfält och uppmuntrande text
 - **loading** - Visar spinner och "Generating..." under AI-bearbetning
-- **ready** - Visar rekommendationer och final pick
+- **success** - Visar rekommendationer och final pick
 - **error** - Visar felmeddelande med "Try again"-knapp för återhämtning
 
 ## UX-funktioner:
@@ -171,10 +198,24 @@ Projektet använder **Zod** för att validera data och säkerställa att inkomma
 Exempel (`schemas.ts`):
 
 ```typescript
-import { z } from "zod";
+import {z} from "zod";
 
-export const promptSchema = z.object({
-  prompt: z.string().min(1, "Prompt får inte vara tom"),
+// Zod-schema för validering av en film
+export const MovieSchema = z.object({
+  title: z.string(),
+  year: z.number(),
+  genre: z.string(),
+});
+
+// Zod-schema för validering av prompt
+export const PromptRequestSchema = z.object({
+  prompt: z.string(),
+});
+
+// Zod-schema för validering av API-svar
+export const AIResponseSchema = z.object({
+  recommendations: z.array(MovieSchema),
+  final_recommendation: MovieSchema,
 });
 ```
 
@@ -281,27 +322,43 @@ Visa `/types/shared.ts`:
 
 ```typescript
 // Filmstruktur
-interface Movie {
+export interface Movie {
   title: string;
   year: number;
   genre: string;
 }
 
 // API-strukturer
-interface PromptRequest {
+export interface PromptRequest {
   prompt: string;
 }
 
-interface AIResponse {
+export interface AIResponse {
   recommendations: Movie[];
   final_recommendation: Movie;
 }
 
-interface MovieResponse {
+export interface MovieResponse {
   response: boolean;
   parsedOutPut?: AIResponse;
   error?: string;
 }
+
+// OMDB API respons
+export interface OmdbMovieDetails {
+  Poster?: string;
+  Plot?: string;
+  Director?: string;
+  Actors?: string;
+  imdbRating?: string;
+}
+
+// UI-state hantering
+export type UiState =
+  | {status: "idle"}
+  | {status: "loading"}
+  | {status: "error"; message: string}
+  | {status: "success"; movies: Movie[]; finalPick: Movie | null};
 ```
 
 ### B. API-rutt (45 sek)
@@ -315,15 +372,15 @@ Visa `/app/api/movieRec/route.ts` (om möjligt):
 
 ```typescript
 // Exempel på API-rutt (förenklad)
-import { NextResponse } from "next/server";
-import { promptSchema } from "../../../validation/schemas";
+import {NextResponse} from "next/server";
+import {promptSchema} from "../../../validation/schemas";
 
 export async function POST(request: Request) {
   const body = await request.json();
   const parsed = promptSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ response: false, error: "Invalid prompt" });
+    return NextResponse.json({response: false, error: "Invalid prompt"});
   }
 
   // Anrop till Google Gemini API...
@@ -341,46 +398,75 @@ export async function POST(request: Request) {
 Visa huvuddelar av `/app/page.tsx`:
 
 ```typescript
-// State management
+// State management med ui state union
 const [prompt, setPrompt] = useState("");
-const [movies, setMovies] = useState<Movie[]>([]);
-const [finalPick, setFinalPick] = useState<Movie | null>(null);
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState<string | null>(null);
+const [uiState, setUiState] = useState<UiState>({status: "idle"});
+
+// Hantering av UI-state vid API-anrop
+const handleGenerate = async () => {
+  setUiState({status: "loading"});
+
+  try {
+    const response = await fetchMovieRec(prompt);
+
+    if (!response.response) {
+      setUiState({
+        status: "error",
+        message: response.error || "Something went wrong",
+      });
+      return;
+    }
+
+    setUiState({
+      status: "success",
+      movies: response.parsedOutPut.recommendations,
+      finalPick: response.parsedOutPut.final_recommendation,
+    });
+  } catch (err) {
+    setUiState({
+      status: "error",
+      message: "Something went wrong. Please try again.",
+    });
+  }
+};
 ```
 
-"Alla states är typade för säkerhet"
-
-Visa fetchMovieRec-anropet:
-
-```
-const response = await fetchMovieRec(prompt);
-
-if (!response.response) {
-  setError(response.error || "Something went wrong");
-  return;
-}
-
-// Sätt movies och finalPick
-setMovies(response.parsedOutPut?.recommendations || []);
-setFinalPick(response.parsedOutPut?.final_recommendation || null);
-```
-
-"Typad API-kommunikation med felhantering"
+"Typad UI-state med diskriminerad union för säkerhet"
 
 ### D. UI States (30 sek)
 
-- **Idle state:**  
-  Visar uppmuntrande text när appen startar.
+Genom att använda diskriminerad union för UI-states får vi en tydlig och typesäker hantering:
 
-- **Loading state:**  
-  Spinner visas och knappar är inaktiverade för att visa att appen arbetar.
+```tsx
+{/* Idle state */}
+{uiState.status === 'idle' && (
+  <p>Enter your preferences above to get movie recommendations!</p>
+)}
 
-- **Ready state:**  
-  Visar filmrekommendationer och den slutgiltiga "Final Pick".
+{/* Loading state */}
+{uiState.status === 'loading' && (
+  <span className="loading-spinner"></span>
+)}
 
-- **Error state:**  
-  Visar tydligt felmeddelande med möjlighet att trycka på "Try again"-knappen.
+{/* Error state */}
+{uiState.status === 'error' && (
+  <div className="error-message">
+    <span>{uiState.message}</span>
+    <button>Try again</button>
+  </div>
+)}
+
+{/* Success state */}
+{uiState.status === 'success' && (
+  <>
+    <div className="movies-list">
+      {uiState.movies.map(movie => (/* Movie rendering */)}
+    </div>
+
+    {uiState.finalPick && (/* Final pick rendering */)}
+  </>
+)}
+```
 
 ---
 
@@ -390,7 +476,7 @@ setFinalPick(response.parsedOutPut?.final_recommendation || null);
 
 - ✅ **Delade typer** – Samma interfaces används i frontend och backend.
 - ✅ **Zod runtime-validering** – `PromptRequestSchema` och `AIResponseSchema` säkerställer korrekt data.
-- ✅ **State typing** – Alla `useState`-hooks är typade.
-- ✅ **Props typing** – Komponenter har typade props.
-- ✅ **API contracts** – Tydliga request/response-typer.
-- ✅ **AI-integration** – Typsäker kommunikation med Gemini.
+- ✅ **Diskriminerad union** – UiState-typen ger typsäker hantering av applikationens tillstånd.
+- ✅ **Props typing** – Komponenter som MovieDetails har typade props (MovieDetailsProps).
+- ✅ **Typade API-anrop** – Typsäker kommunikation med både Gemini och OMDB API.
+- ✅ **Eliminering av any** – OmdbMovieDetails-interfacet ersätter `any` för bättre typsäkerhet.
