@@ -12,6 +12,8 @@ export default function Home() {
   const [finalPick, setFinalPick] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -19,15 +21,16 @@ export default function Home() {
     setFinalPick(null);
 
     try {
+      setError(null);
       const response = await fetchMovieRec(prompt);
 
       if (!response.response) {
-        alert(response.error || "Något gick fel med API:et");
+        setError(response.error || "❌ Något gick fel med API:et");
         return;
       }
 
       if (!response.parsedOutPut) {
-        alert("Ingen data mottogs");
+        setError("❌ Ingen data mottogs");
         return;
       }
 
@@ -35,7 +38,7 @@ export default function Home() {
       setFinalPick(response.parsedOutPut.final_recommendation);
       setPrompt("");
     } catch (err) {
-      alert("Något gick fel. Försök igen.");
+      setError("❌ Något gick fel. Försök igen.");
     } finally {
       setLoading(false);
     }
@@ -57,17 +60,22 @@ export default function Home() {
         {/* Input + Button */}
         <div className="flex gap-2 mb-6">
           <input
+            autoFocus // User flow: Automatically focus the input field on page load
             type="text"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="Enter your preferences..."
+            disabled={loading}
             className="border rounded-lg px-4 py-2 w-full shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-gray-900 text-yellow-200 placeholder-yellow-400"
           />
           <button
             onClick={handleGenerate}
             disabled={loading}
-            className="bg-yellow-400 text-gray-900 px-5 py-2 rounded-lg shadow-sm hover:bg-yellow-500 disabled:opacity-50 font-bold"
+            className="flex items-center justify-center gap-2 bg-yellow-400 text-gray-900 px-5 py-2 rounded-lg shadow-sm hover:bg-yellow-500 disabled:opacity-50 font-bold min-w-[120px]"
           >
+            {loading && (
+              <span className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></span> //Loading spinner
+            )}
             {loading ? "Generating..." : "Get"}
           </button>
         </div>
@@ -82,6 +90,24 @@ export default function Home() {
           </button>
         </div>
 
+        {error && (
+          <div className="mb-6 p-3 rounded bg-red-100 text-red-700 border border-red-300 flex justify-between items-center">
+            <span>{error}</span>
+            <button
+              onClick={handleGenerate}
+              className="ml-4 text-sm text-red-800 underline"
+            > 
+            {/* User Flow */}
+              Försök igen 
+            </button>
+          </div>
+        )}
+        {/* Ready state (when nothing yet) */} 
+        {!loading && !error && movies.length === 0 && !finalPick && (
+          <p className="text-center text-gray-500 mt-10">
+            👆 Enter your preferences above to get movie recommendations!
+          </p>
+)}
         {/* Recommendations */}
         {movies.length > 0 && (
           <div className="mb-8">
